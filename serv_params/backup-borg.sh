@@ -2,7 +2,7 @@
 
 LOCKFILE=/tmp/lockfile
 if [ -e ${LOCKFILE} ] && kill -0 `cat ${LOCKFILE}`; then
-    echo "Сервис уже работает!"
+    echo "Service already working!"
     exit
 fi
 
@@ -11,10 +11,9 @@ echo $$ > ${LOCKFILE}
 
 
 BACKUP_HOST='192.168.10.11'
-BACKUP_USER='vagrant'
+BACKUP_USER='root'
 BACKUP_REPO=myrepo
 LOG=/var/log/backup_borg.log
-
 export BORG_PASSPHRASE='passphrase'
 
 borg create \
