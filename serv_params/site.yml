@@ -1,0 +1,63 @@
+---
+- hosts: server
+  become: true
+
+  tasks:    
+    - name: Установка временной зоны MSK
+      timezone:
+        name: Europe/Moscow
+
+    - name: Устанавливаем epel-репозиторий
+      yum:
+        name: epel-release
+        state: present
+      tags:
+        - epel-package
+        - packages
+
+    - name: Устанавливаем необходимые и вспомогательные пакеты через yum
+      become: true
+      yum:
+        name: "{{item}}"
+        state: present
+      loop:
+        - mc
+        - nano
+        - net-tools
+        - yum-utils
+
+    - name: Копируем скрипт
+      copy:
+        src: backup-borg.sh
+        dest: /opt/backup-borg.sh
+        owner: vagrant
+        group: vagrant
+        mode: a+x
+
+    - name: Копируем unit timer
+      copy:
+        src: backup-borg.timer
+        dest: /etc/systemd/system/
+      notify:
+        - restart backup-borg.timer
+
+    - name: Копируем unit service
+      copy:
+        src: backup-borg.service
+        dest: /etc/systemd/system/backup-borg.service
+      notify:
+        - restart backup-borg.service
+
+  handlers:
+    - name: restart backup-borg.timer
+      systemd:
+        name: backup-borg.timer
+        daemon_reload: true
+        enabled: true
+        
+    - name: restart backup-borg.service
+      systemd:
+        name: backup-borg.service
+        daemon_reload: true
+        enabled: true
+

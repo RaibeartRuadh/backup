@@ -1,0 +1,28 @@
+---
+- hosts: backup
+  become: true
+
+  tasks:    
+    - name: Установка временной зоны MSK
+      timezone:
+        name: Europe/Moscow
+
+    - name: Устанавливаем epel-репозиторий
+      yum:
+        name: epel-release
+        state: present
+      tags:
+        - epel-package
+        - packages
+
+    - name: Устанавливаем необходимые и вспомогательные пакеты через yum
+      become: true
+      yum:
+        name: "{{item}}"
+        state: present
+      loop:
+        - mc
+        - nano
+        - net-tools
+        - yum-utils
+
