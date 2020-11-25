@@ -47,6 +47,15 @@
         dest: /etc/systemd/system/backup-borg.service
       notify:
         - restart backup-borg.service
+        
+    - name: ensure file exists
+      copy:
+        content: ""
+        dest: /var/log/backup_borg.log
+        force: no
+        group: vagrant
+        owner: vagrant
+        mode: 0777
 
   handlers:
     - name: restart backup-borg.timer
