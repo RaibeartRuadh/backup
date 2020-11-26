@@ -3,23 +3,68 @@
 
 SERVER_IP = "192.168.10.10"
 BACKUP_IP = "192.168.10.11"
+#diskdir = './Disk.vdi'
 
 Vagrant.configure("2") do |config|
   config.vm.box = "centos/7"
-
   config.vm.define "server" do |server|
-    server.vm.hostname = "server"
     server.vm.network "private_network", ip: SERVER_IP
-    server.vm.provision "ansible" do |ansible|
+    server.vm.synced_folder ".", "/vagrant", disabled: true
+        	server.vm.provider "virtualbox" do |vb|
+      	  vb.memory = 1024
+          vb.cpus = 2
+    server.vm.hostname = "server"
+         unless File.exist?('./Disk.vdi')
+          vb.customize ['createhd', '--filename', './Disk.vdi', '--variant', 'Fixed', '--size', 2 * 1024]
+        end
+          vb.customize ['storageattach', :id,  '--storagectl', 'IDE', '--port', 1, '--device', 0, '--type', 'hdd', '--medium', './Disk.vdi']
+       end
+      server.vm.provision "ansible" do |ansible|
       ansible.playbook = "serv_params/site.yml"
     end
-  end
+      server.vm.provision "shell", path: "serv_params/server.sh"
+    end
+
 
   config.vm.define "backup" do |backup|
     backup.vm.hostname = "backup"
     backup.vm.network "private_network", ip: BACKUP_IP
+        backup.vm.provider "virtualbox" do |vb|
+      vb.memory = 1024
+      vb.cpus = 2      
+    end
+    backup.vm.synced_folder ".", "/vagrant", disabled: true
+    backup.vm.provision "file", source: "./.vagrant/machines/server/virtualbox/private_key", destination: "/home/vagrant/private_key"
+    #backup.vm.provision "file", source: "./script.sh", destination: "/home/vagrant/script.sh"
+        
     backup.vm.provision "ansible" do |ansible|
       ansible.playbook = "back_params/site.yml"
     end
+    
+    backup.vm.provision "shell", path: "back_params/backup.sh"
+    config.vm.provision "shell", inline: <<-SHELL
+            mkdir -p ~root/.ssh
+            cp ~vagrant/.ssh/auth* ~root/.ssh
+    SHELL
+    
   end
 end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

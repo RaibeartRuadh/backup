@@ -10,11 +10,14 @@ trap "rm -f ${LOCKFILE}; exit" INT TERM EXIT
 echo $$ > ${LOCKFILE}
 
 
+
+
 BACKUP_HOST='192.168.10.11'
 BACKUP_USER='root'
 BACKUP_REPO=myrepo
 LOG=/var/log/backup_borg.log
-export BORG_PASSPHRASE='passphrase'
+export BORG_PASSPHRASE='derparol'
+BORG_RSH="ssh -o 'StrictHostKeyChecking=no' -i /home/vagrant/private_key" 
 
 borg create \
   --stats --list --debug --progress \

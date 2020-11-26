@@ -26,3 +26,10 @@
         - net-tools
         - yum-utils
 
+    - name: Устанавливаем borgbackup 1.1.14
+      get_url:
+        url: https://github.com/borgbackup/borg/releases/download/1.1.14/borg-linux64
+        dest: /usr/bin/borg
+        owner: root
+        group: root
+        mode: '0777'
