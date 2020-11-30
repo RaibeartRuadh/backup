@@ -9,8 +9,7 @@ Vagrant.configure("2") do |config|
   config.vm.box = "centos/7"
   config.vm.define "server" do |server|
     server.vm.network "private_network", ip: SERVER_IP
-    server.vm.synced_folder ".", "/vagrant", disabled: true
-        	server.vm.provider "virtualbox" do |vb|
+    server.vm.provider "virtualbox" do |vb|
       	  vb.memory = 1024
           vb.cpus = 2
     server.vm.hostname = "server"
@@ -20,9 +19,9 @@ Vagrant.configure("2") do |config|
           vb.customize ['storageattach', :id,  '--storagectl', 'IDE', '--port', 1, '--device', 0, '--type', 'hdd', '--medium', './Disk.vdi']
        end
       server.vm.provision "ansible" do |ansible|
-      ansible.playbook = "serv_params/site.yml"
+      ansible.playbook = "playserver.yml"
     end
-      server.vm.provision "shell", path: "serv_params/server.sh"
+      server.vm.provision "shell", path: "server.sh"
     end
 
 
@@ -33,20 +32,9 @@ Vagrant.configure("2") do |config|
       vb.memory = 1024
       vb.cpus = 2      
     end
-    backup.vm.synced_folder ".", "/vagrant", disabled: true
-    backup.vm.provision "file", source: "./.vagrant/machines/server/virtualbox/private_key", destination: "/home/vagrant/private_key"
-    #backup.vm.provision "file", source: "./script.sh", destination: "/home/vagrant/script.sh"
-        
     backup.vm.provision "ansible" do |ansible|
-      ansible.playbook = "back_params/site.yml"
+      ansible.playbook = "playbackup.yml"
     end
-    
-    backup.vm.provision "shell", path: "back_params/backup.sh"
-    config.vm.provision "shell", inline: <<-SHELL
-            mkdir -p ~root/.ssh
-            cp ~vagrant/.ssh/auth* ~root/.ssh
-    SHELL
-    
   end
 end
 
