@@ -35,42 +35,55 @@
 #!/bin/bash
 
 -  Блокирование повторных запусков на случай работы скрипта.
-     LOCKFILE=/tmp/lockfile
-     if [ -e ${LOCKFILE} ] && kill -0 `cat ${LOCKFILE}`; then
-     echo "Сервис уже работает!"
-     exit
-     fi
+
+          LOCKFILE=/tmp/lockfile
+          if [ -e ${LOCKFILE} ] && kill -0 `cat ${LOCKFILE}`; then
+          echo "Сервис уже работает!"
+          exit
+          fi
 -  удаление блокировки при завершении
-     trap "rm -f ${LOCKFILE}; exit" INT TERM EXIT
-     echo $$ > ${LOCKFILE}
+
+          trap "rm -f ${LOCKFILE}; exit" INT TERM EXIT
+          echo $$ > ${LOCKFILE}
 
 -   параметры объекта бэкапирования
 -  IP address хоста бэкапирования
-     BACKUP_HOST='192.168.10.11'
+
+          BACKUP_HOST='192.168.10.11'
+          
 -  user, под который у нас сертификат
-     BACKUP_USER='borg'
+
+         BACKUP_USER='borg'
+         
 -  название репозитория (указанный при инициализации)
-     BACKUP_REPO=$(hostname)-etc
+
+       BACKUP_REPO=$(hostname)-etc
+     
 -  Перенаправляем логи borg в наш файл 
-     LOG=/var/log/backup_borg.log
+
+        LOG=/var/log/backup_borg.log
+        
 -  Передача "парольной фразы"
-     export BORG_PASSPHRASE='derparol'
+
+        export BORG_PASSPHRASE='derparol'
+     
 -  Параметры бэкапирования
 
-     borg create \
+        borg create \
        --stats --list --debug --progress \
        ${BACKUP_USER}@${BACKUP_HOST}:${BACKUP_REPO}::"etc-server-{now:%Y-%m-%d_%H:%M:%S}" \
        /etc 2>> ${LOG}
 
 -  Параметры очищения архивов превышающих временное значение
 -  В данном ДЗ определено хранить бэкапы за последние 30 дней и по одному за предыдущие два месяца
-     borg prune \
+
+          borg prune \
        -v --list \
        ${BACKUP_USER}@${BACKUP_HOST}:${BACKUP_REPO} \
        --keep-within 1m \
        --keep-monthly 3 
 
-     rm -f ${LOCKFILE}
+        rm -f ${LOCKFILE}
 
 - Выполняем скрипт вручную, чтобы проверить работу
 - Проверяем журнал
