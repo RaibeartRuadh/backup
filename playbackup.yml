@@ -85,12 +85,19 @@
         content: "{{ backupkey.stdout }}"
         dest: /root/.ssh/known_hosts
 
+    - name: Копируем скрипт
+      copy:
+        src: server.sh
+        dest: /home/vagrant/
+        mode: a+x
+
     - name: Инициируем бэкапирование borg
-      command: borg init --encryption=repokey-blake2 borg@192.168.10.11:server-etc/
-      #borg init --encryption=repokey-blake2  ssh://borg@192.168.10.11/etc/
-#      command: borg init -e none borg@192.168.10.11:server-etc/
-#  borg init --encryption=repokey-blake2 root@192.168.10.11:server-etc/     
-      #  borg init --encryption=repokey-blake2  ssh://borg@192.168.10.11:etc/
+      command: sh /home/vagrant/server.sh
+
+
+    #- name: Инициируем бэкапирование borg
+    #  command: BORG_PASSPHRASE="derparol" borg init --encryption=repokey-blake2 borg@192.168.10.11:server-etc/
+
         
      
         

@@ -31,8 +31,9 @@ Vagrant.configure("2") do |config|
           box.vm.provision :ansible do |ansible|
             ansible.limit = "all"
             ansible.playbook = boxconfig[:playbook]
-            ansible.verbose = "vv"
+            #ansible.verbose = "vv"
           end
+          #box.vm.provision "shell", run: "always", path: "server.sh"
       end
   end
 end
