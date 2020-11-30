@@ -34,43 +34,43 @@
 
 #!/bin/bash
 
-# Блокирование повторных запусков на случай работы скрипта.
-LOCKFILE=/tmp/lockfile
-if [ -e ${LOCKFILE} ] && kill -0 `cat ${LOCKFILE}`; then
-    echo "Сервис уже работает!"
-    exit
-fi
-# удаление блокировки при завершении
-trap "rm -f ${LOCKFILE}; exit" INT TERM EXIT
-echo $$ > ${LOCKFILE}
+-  Блокирование повторных запусков на случай работы скрипта.
+     LOCKFILE=/tmp/lockfile
+     if [ -e ${LOCKFILE} ] && kill -0 `cat ${LOCKFILE}`; then
+     echo "Сервис уже работает!"
+     exit
+     fi
+-  удаление блокировки при завершении
+     trap "rm -f ${LOCKFILE}; exit" INT TERM EXIT
+     echo $$ > ${LOCKFILE}
 
-# параметры объекта бэкапирования
-# IP address хоста бэкапирования
-BACKUP_HOST='192.168.10.11'
-# user, под который у нас сертификат
-BACKUP_USER='borg'
-# название репозитория (указанный при инициализации)
-BACKUP_REPO=$(hostname)-etc
-# Перенаправляем логи borg в наш файл 
-LOG=/var/log/backup_borg.log
-# Передача "парольной фразы"
-export BORG_PASSPHRASE='derparol'
-# Параметры бэкапирования
+-   параметры объекта бэкапирования
+-  IP address хоста бэкапирования
+     BACKUP_HOST='192.168.10.11'
+-  user, под который у нас сертификат
+     BACKUP_USER='borg'
+-  название репозитория (указанный при инициализации)
+     BACKUP_REPO=$(hostname)-etc
+-  Перенаправляем логи borg в наш файл 
+     LOG=/var/log/backup_borg.log
+-  Передача "парольной фразы"
+     export BORG_PASSPHRASE='derparol'
+-  Параметры бэкапирования
 
-borg create \
-  --stats --list --debug --progress \
-  ${BACKUP_USER}@${BACKUP_HOST}:${BACKUP_REPO}::"etc-server-{now:%Y-%m-%d_%H:%M:%S}" \
-  /etc 2>> ${LOG}
+     borg create \
+       --stats --list --debug --progress \
+       ${BACKUP_USER}@${BACKUP_HOST}:${BACKUP_REPO}::"etc-server-{now:%Y-%m-%d_%H:%M:%S}" \
+       /etc 2>> ${LOG}
 
-# Параметры очищения архивов превышающих временное значение
-# В данном ДЗ определено хранить бэкапы за последние 30 дней и по одному за предыдущие два месяца
-borg prune \
-  -v --list \
-  ${BACKUP_USER}@${BACKUP_HOST}:${BACKUP_REPO} \
-  --keep-within 1m \
-  --keep-monthly 3 
+-  Параметры очищения архивов превышающих временное значение
+-  В данном ДЗ определено хранить бэкапы за последние 30 дней и по одному за предыдущие два месяца
+     borg prune \
+       -v --list \
+       ${BACKUP_USER}@${BACKUP_HOST}:${BACKUP_REPO} \
+       --keep-within 1m \
+       --keep-monthly 3 
 
-rm -f ${LOCKFILE}
+     rm -f ${LOCKFILE}
 
 - Выполняем скрипт вручную, чтобы проверить работу
 - Проверяем журнал
@@ -85,28 +85,28 @@ $ cat /var/log/backup_borg.log
 Конфигурация таймера
 Расположение  /etc/systemd/system/backup-borg.timer
 
-[Unit]
-Description=Сервис резервирования - таймер
+    [Unit]
+    Description=Сервис резервирования - таймер
 
-[Timer]
-OnBootSec=300
-OnUnitActiveSec=300
-Unit=backup-borg.service
+    [Timer]
+    OnBootSec=300
+    OnUnitActiveSec=300
+    Unit=backup-borg.service
 
-[Install]
-WantedBy=multi-user.target
+    [Install]
+    WantedBy=multi-user.target
 
 Конфигурация сервиса
 Расположение /etc/systemd/system/backup-borg.service
 
-[Unit]
-Description=Служба выполнения резервирования Borg
-Wants=network-online.target
-After=network-online.target
+    [Unit]
+    Description=Служба выполнения резервирования Borg
+    Wants=network-online.target
+    After=network-online.target
 
-[Service]
-Type=oneshot
-ExecStart=/opt/backup-borg.sh
+    [Service]
+    Type=oneshot
+    ExecStart=/opt/backup-borg.sh
 
 4. Проверим работу.
 Создадим директорию с файлами на хосте server
