@@ -53,9 +53,7 @@
     - name: Копируем скрипт
       copy:
         src: backup-borg.sh
-        dest: /opt/backup-borg.sh
-        owner: vagrant
-        group: vagrant
+        dest: /home/vagrant/
         mode: a+x
 
     - name: Создаем файл для лога

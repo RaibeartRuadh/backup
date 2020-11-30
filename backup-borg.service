@@ -5,4 +5,4 @@ After=network-online.target
 
 [Service]
 Type=oneshot
-ExecStart=/opt/backup-borg.sh
+ExecStart=/home/vagrant/backup-borg.sh

@@ -86,11 +86,13 @@
         dest: /root/.ssh/known_hosts
 
     - name: Инициируем бэкапирование borg
-      command: borg init -e none borg@192.168.10.11.:server-etc/
+      command: borg init --encryption=repokey-blake2 borg@192.168.10.11:server-etc/
+      #borg init --encryption=repokey-blake2  ssh://borg@192.168.10.11/etc/
+#      command: borg init -e none borg@192.168.10.11:server-etc/
+#  borg init --encryption=repokey-blake2 root@192.168.10.11:server-etc/     
+      #  borg init --encryption=repokey-blake2  ssh://borg@192.168.10.11:etc/
         
-        
-        
-        
+     
         
         
         
