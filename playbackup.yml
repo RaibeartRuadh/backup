@@ -93,6 +93,11 @@
 
     - name: Инициируем бэкапирование borg
       command: sh /home/vagrant/server.sh
+   
+    - name: Копируем правило logrotate
+      copy:
+        src: borg
+        dest: /etc/logrotate.d/borg
 
 
     #- name: Инициируем бэкапирование borg

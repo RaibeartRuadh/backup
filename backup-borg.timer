@@ -3,7 +3,7 @@ Description=Сервис резервирования - таймер
 
 [Timer]
 OnBootSec=300
-OnUnitActiveSec=1h
+OnUnitActiveSec=300
 Unit=backup-borg.service
 
 [Install]
