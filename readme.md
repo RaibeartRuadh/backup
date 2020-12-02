@@ -30,10 +30,10 @@
 1. Тут пришлось помучаться. Наверное потому, что с вагрантом знаком еще не так много и его ошибки не всегда очевидны. После плясок с бубном всё удалось. Поднимается хост backup, с дополнительным диском, в системе как /dev/sdb
 Монтируем по ходу через скрипт server.sh:
       
-      #!/bin/sh
-      mkdir /var/backup
-      sudo mkfs.xfs /dev/sdb
-      sudo mount /dev/sdb /var/backup
+            #!/bin/sh
+            mkdir /var/backup
+            sudo mkfs.xfs /dev/sdb
+            sudo mount /dev/sdb /var/backup
 
 2. Решается через генерацию скрипта ssh-keygen. Публичный ключ в id_rsa.pub выгружается во внешнюю директорию ssh. Это выполняется на этапе прохода playbook ansible для хоста server. Затем в этапе выполнения playbook для хоста backup мы считываем и помещаем этот ключ в /root/.ssh/known_hosts.
 3. Через playbook'и playbackup.yml и playserver.yml. Причем в playbackup.yml присутствует часть для отработки на хосте server. Возможная альтернатива - единый playbook.
