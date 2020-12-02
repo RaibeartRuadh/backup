@@ -56,6 +56,12 @@
         dest: /home/vagrant/
         mode: a+x
 
+    - name: Копируем скрипт
+      copy:
+        src: borginit.sh
+        dest: /home/vagrant/
+        mode: a+x
+
     - name: Создаем файл для лога
       copy:
         content: ""

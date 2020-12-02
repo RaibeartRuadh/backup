@@ -22,7 +22,7 @@ echo $BACKUP_REPO
 borg create \
   --stats --list --debug --progress \
   ${BACKUP_USER}@${BACKUP_HOST}:${BACKUP_REPO}::"etc-server-{now:%Y-%m-%d_%H:%M:%S}" \
-  /etc 2>> ${LOG}
+  /var/backup 2>> ${LOG}
 
 
 # удаление резервных записей

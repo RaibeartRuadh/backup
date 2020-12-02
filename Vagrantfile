@@ -1,53 +1,51 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
-###
-MACHINES = {
-  :server => {
-        :box_name => "centos/7",
-        :ip_addr => '192.168.10.10',
-        :memory => '512',
-        :cpu => '1',
-        :playbook => 'playserver.yml'
-  },
-  :backup => {
-        :box_name => "centos/7",
-        :ip_addr => '192.168.10.11',
-        :memory => '512',
-        :cpu => '1',
-        :playbook => 'playbackup.yml'
-  }
-}
+
+diskdir = './secondDisk.vdi'
+  
 #### 
 Vagrant.configure("2") do |config|
-  MACHINES.each do |boxname, boxconfig|
-      config.vm.define boxname do |box|
-          box.vm.box = boxconfig[:box_name]
-          box.vm.host_name = boxname.to_s
-          box.vm.network "private_network", ip: boxconfig[:ip_addr]
-          box.vm.provider :virtualbox do |vb|
-            vb.memory = boxconfig[:memory]
-            vb.cpus = boxconfig[:cpu]
-       end
-          box.vm.provision :ansible do |ansible|
+  config.vm.box = "centos/7"
+
+  config.vm.define "server" do |server|
+    server.vm.synced_folder ".", "/vagrant", disabled: true
+    server.vm.network "private_network", ip: "192.168.10.10"
+    server.vm.provider "virtualbox" do |vb|
+      	  vb.memory = 1024
+          vb.cpus = 2
+    server.vm.hostname = "server"
+    	unless File.exist?(diskdir)
+          vb.customize ['createhd', '--filename', diskdir, '--variant', 'Fixed', '--size', 2 * 1024]
+        end
+          vb.customize ['storageattach', :id,  '--storagectl', 'IDE', '--port', 1, '--device', 0, '--type', 'hdd', '--medium', diskdir]
+       # end
+        end
+    server.vm.hostname = "server"
+    server.vm.provision "shell", path: "server.sh"
+    server.vm.provision :ansible do |ansible|
             ansible.limit = "all"
-            ansible.playbook = boxconfig[:playbook]
+            ansible.playbook = 'playserver.yml'
+            #ansible.verbose = "vv"
+          end
+    end
+
+  config.vm.define "backup" do |backup|
+    backup.vm.network "private_network", ip: "192.168.10.11"
+    backup.vm.provider :virtualbox do |vb|
+      	  vb.memory = 1024
+          vb.cpus = 2
+        
+      end
+ 
+    backup.vm.provision :ansible do |ansible|
+           ansible.limit = "all"
+           ansible.playbook = 'playbackup.yml'
             #ansible.verbose = "vv"
           end
           #box.vm.provision "shell", run: "always", path: "server.sh"
       end
-  end
+
 end
-
-
-
-
-
-
-
-
-
-
-
 
 
 

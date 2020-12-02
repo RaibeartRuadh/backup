@@ -85,14 +85,14 @@
         content: "{{ backupkey.stdout }}"
         dest: /root/.ssh/known_hosts
 
-    - name: Копируем скрипт
-      copy:
-        src: server.sh
-        dest: /home/vagrant/
-        mode: a+x
+#    - name: Копируем скрипт
+#      copy:
+#        src: server.sh
+#        dest: /home/vagrant/
+#        mode: a+x
 
     - name: Инициируем бэкапирование borg
-      command: sh /home/vagrant/server.sh
+      command: sh /home/vagrant/borginit.sh
    
     - name: Копируем правило logrotate
       copy:
