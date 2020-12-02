@@ -71,6 +71,13 @@
         group: "{{ user }}"
         recurse: yes
 
+    - name: меняем владельца
+      file:
+        path: /var/backup
+        owner: "{{ user }}"
+        group: "{{ user }}"
+        mode: 01777
+
 - name: server | Install and configure server
   hosts: server
   become: true
@@ -90,7 +97,6 @@
 #        src: server.sh
 #        dest: /home/vagrant/
 #        mode: a+x
-
     - name: Инициируем бэкапирование borg
       command: sh /home/vagrant/borginit.sh
    

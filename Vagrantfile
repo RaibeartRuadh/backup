@@ -13,29 +13,38 @@ Vagrant.configure("2") do |config|
     server.vm.provider "virtualbox" do |vb|
       	  vb.memory = 1024
           vb.cpus = 2
-    server.vm.hostname = "server"
-    	unless File.exist?(diskdir)
-          vb.customize ['createhd', '--filename', diskdir, '--variant', 'Fixed', '--size', 2 * 1024]
-        end
-          vb.customize ['storageattach', :id,  '--storagectl', 'IDE', '--port', 1, '--device', 0, '--type', 'hdd', '--medium', diskdir]
+    
        # end
         end
-    server.vm.hostname = "server"
-    server.vm.provision "shell", path: "server.sh"
+
+    
+    
+    ############
     server.vm.provision :ansible do |ansible|
             ansible.limit = "all"
             ansible.playbook = 'playserver.yml'
             #ansible.verbose = "vv"
           end
     end
-
+####
   config.vm.define "backup" do |backup|
     backup.vm.network "private_network", ip: "192.168.10.11"
     backup.vm.provider :virtualbox do |vb|
       	  vb.memory = 1024
           vb.cpus = 2
+        ##
+        backup.vm.hostname = "backup"
+    	unless File.exist?(diskdir)
+          vb.customize ['createhd', '--filename', diskdir, '--variant', 'Fixed', '--size', 2 * 1024]
+        end
+          vb.customize ['storageattach', :id,  '--storagectl', 'IDE', '--port', 1, '--device', 0, '--type', 'hdd', '--medium', diskdir]
+        ##
         
       end
+ ##
+     backup.vm.hostname = "backup"
+    backup.vm.provision "shell", path: "server.sh"
+ ###
  
     backup.vm.provision :ansible do |ansible|
            ansible.limit = "all"

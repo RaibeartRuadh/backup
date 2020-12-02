@@ -12,7 +12,7 @@ echo $$ > ${LOCKFILE}
 # параметры окружения
 BACKUP_HOST='192.168.10.11'
 BACKUP_USER='borg'
-BACKUP_REPO=$(hostname)-etc
+BACKUP_REPO='/var/backup'
 LOG=/var/log/backup_borg.log
 export BORG_PASSPHRASE='derparol'
 
@@ -21,8 +21,8 @@ echo $BACKUP_REPO
 # создание резервных записей
 borg create \
   --stats --list --debug --progress \
-  ${BACKUP_USER}@${BACKUP_HOST}:${BACKUP_REPO}::"etc-server-{now:%Y-%m-%d_%H:%M:%S}" \
-  /var/backup 2>> ${LOG}
+  ${BACKUP_USER}@${BACKUP_HOST}:${BACKUP_REPO}::"var-backup-{now:%Y-%m-%d_%H:%M:%S}" \
+  /etc 2>> ${LOG}
 
 
 # удаление резервных записей
