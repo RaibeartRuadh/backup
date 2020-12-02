@@ -16,164 +16,126 @@
 
 Исполнение.
 Делим задачу на несколько этапов.
-Нужно 2 машины - server и backup
+1. Нужно 2 хоста - server и backup. На на хосте server необходимо примонтировать диск объемом не менее 2GB в /var/backup
+2. Обеспечение связи через ssh ключ
+3. Установка пакетов
+4. Нужен скрипт на свнятие резервных копий
+5. Нужен механизм запуска скприта
+6. Пакет борг должен быть настроен с ключевой фразой или шифрованием
+7. Логи перенаправлять в логгер
+8. Ротация логов
 
-1. Запускаем стенды:
-- $ vagrant up
-- стенды отрабтают частично. Часть действий выполним вручную
+Исполнение:
 
-2. Выпуск ssh-ключа (server)
-- На хосте server выполнить:
-- Повысить привелегии:
-- $ sudo -i
-- выпустим shh-ключ
-- $ ssh-keygen
-- место хранение пусть будет по-умолчанию
-- при создании ключа passphrase не указывать
-- После создания ключа, выведите содержимое публичного ключа и сохраните его
-- $ cat /root/.ssh/id_rsa.pub 
-Пример вывода:
+1. Тут пришлось помучаться. Наверное потому, что с вагрантом знаком еще не так много и его ошибки не всегда очевидны. После плясок с бубном всё удалось. Поднимается хост сервера, с дополнительным диском, в системе как /dev/sdb
+Монтируем по ходу через скрипт server.sh:
+      
+      #!/bin/sh
+      mkdir /var/backup
+      sudo mkfs.xfs /dev/sdb
+      sudo mount /dev/sdb /var/backup
 
-ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDFJbL/cEQAwm/Vzu70Xf2J5+tkqIDRFuq3MbxOAwzZYEq6Jayb3EIH1ZQ/7fEUpmbEvxQaSVYGgtqHaTe5ISkNUjCsGMmhud3ALY9APzCl4LUGSL6z0WZ1sv1qPJy6tuguKh1TMK7ZxXPbq8dEYBUFqSuijSkeGEKYI39a1PZmuvUdhF4qsrgjcbH4evhX1PdsXSD0vrUk/uS1emUjktDQXAwmVXDCMR2TjrZRykgrdV/j9GFewXLic7D1vyD8qyI1rOft/3Zu11k1msJ+5TcJsFtpwy+/EdVdGnQZTL95DDRp7MmeBT1fZZL0QZcbF3W3YeToLG7AdnubJHPOvpX3 root@server
+2. Решается через генерацию скрипта ssh-keygen. Публичный ключ в id_rsa.pub выгружается во внешнюю директорию ssh. Это выполняется на этапе прохода playbook ansible для хоста server. Затем в этапе выполнения playbook для хоста backup мы считываем и помещаем этот ключ в /root/.ssh/known_hosts.
+3. Через playbook'и playbackup.yml и playserver.yml. Причем в playbackup.yml присутствует часть для отработки на хосте server. Возможная альтернатива - единый playbook.
+4. Простая часть, так как есть куча примеров. Готовый скрипт кладется на хость server.
 
-4. Установка ssh-ключа (backup)
+        #!/bin/bash
+        #- Блокирование повторных запусков на случай работы скрипта.
+        LOCKFILE=/tmp/lockfile
+        if [ -e ${LOCKFILE} ] && kill -0 `cat ${LOCKFILE}`; then
+            echo "Сервис уже работает!"
+            exit
+        fi
+        # удаление блокировки при завершении
+        trap "rm -f ${LOCKFILE}; exit" INT TERM EXIT
+        echo $$ > ${LOCKFILE}
+        
+        # параметры объекта бэкапирования
+        # IP address
+        BACKUP_HOST='192.168.10.11'
+        BACKUP_USER='borg'
+        BACKUP_REPO=$(hostname)-etc
+        LOG=/var/log/backup_borg.log
+        export BORG_PASSPHRASE='derparol'
+        
+        # Параметры бэкапирования
+        borg create \
+          --stats --list --debug --progress \
+          ${BACKUP_USER}@${BACKUP_HOST}:${BACKUP_REPO}::"etc-server-{now:%Y-%m-%d_%H:%M:%S}" \
+          /etc 2>> ${LOG}
+        
+        # Параметры очищения архивов превышающих временное значение
+        # В данном ДЗ определено хранить бэкапы за последние 30 дней и по одному за предыдущие два месяца
+        borg prune \
+          -v --list \
+          ${BACKUP_USER}@${BACKUP_HOST}:${BACKUP_REPO} \
+          --keep-daily=30 \
+          --keep-monthly=2 2>> ${LOG}
+        
+        rm -f ${LOCKFILE}
 
-- Перейти на хост backup
-- проверить, что есть директория /root/.ssh
-$ ls /root/.ssh
-- при отстуствии директории - создать ее 
-- $ mkdir -p /root/.ssh
-- Прописываем публичный ключ:
-Пример:
-- $ echo ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDFJbL/cEQAwm/Vzu70Xf2J5+tkqIDRFuq3MbxOAwzZYEq6Jayb3EIH1ZQ/7fEUpmbEvxQaSVYGgtqHaTe5ISkNUjCsGMmhud3ALY9APzCl4LUGSL6z0WZ1sv1qPJy6tuguKh1TMK7ZxXPbq8dEYBUFqSuijSkeGEKYI39a1PZmuvUdhF4qsrgjcbH4evhX1PdsXSD0vrUk/uS1emUjktDQXAwmVXDCMR2TjrZRykgrdV/j9GFewXLic7D1vyD8qyI1rOft/3Zu11k1msJ+5TcJsFtpwy+/EdVdGnQZTL95DDRp7MmeBT1fZZL0QZcbF3W3YeToLG7AdnubJHPOvpX3 root@server >> /root/.ssh/authorized_keys
-
-5. Проверим, что мы можем зайти по ключу.
-
-- перейти на хост server и выполнить:
-- $ ssh root@192.168.10.11
-- Подтвердить подключение, введя yes
-После ввода контрольного слова, вы попадаете на хост server
-
-             >> Last login: Mon Nov 23 10:59:19 2020 from 10.0.2.2
-             [root@backup ~]$
-
-==================================================================
-6. Устанавливаем borgbackup на хостах server и backup
-Последний стабильный релиз 1.1.14
-
-$ sudo curl -L https://github.com/borgbackup/borg/releases/download/1.1.14/borg-linux64 -o /usr/bin/borg
-$ sudo chmod +x /usr/bin/borg
-
-
-==================================================================
-7. Выполняем инициализацию репозитория borg с поддержкой шифрования по алгоритму blake2  на хосте server
-(материалы: https://borgbackup.readthedocs.io/en/stable/usage/init.html)
-
-- $ borg init --encryption=repokey-blake2 root@192.168.10.11:myrepo
-При инициализации несколько раз вводим контрольное слово - passphrase. Ключ шифрования после инициализации репозитория будет храниться на хосте backup в файле <REPO_DIR>/config:
-При настроенном шифровании passphrase будет запрашиваться каждый раз при запуске процедуры бэкапа. Поэтому для автоматизации бэкапа в нашем скрипте одним из способов является передача passphrase в переменную окружения BORG_PASSPHRASE: export BORG_PASSPHRASE='passphrase'.
-
-8. Проверяем скрипт для задачи
-- Скрипт уже скопирован в директорию /opt/backup-borg.sh и готов к использованию
-- Проверим содержимое:
-
-#!/bin/bash
-
-# Блокирование повторных запусков на случай работы скрипта.
-LOCKFILE=/tmp/lockfile
-if [ -e ${LOCKFILE} ] && kill -0 `cat ${LOCKFILE}`; then
-    echo "Сервис уже работает!"
-    exit
-fi
-# удаление блокировки при завершении
-trap "rm -f ${LOCKFILE}; exit" INT TERM EXIT
-echo $$ > ${LOCKFILE}
-
-# параметры объекта бэкапирования
-# IP address
-BACKUP_HOST='192.168.10.11'
-# user, под который у нас сертификат
-BACKUP_USER='root'
-# название репозитория (указанный при инициализации)
-BACKUP_REPO=myrepo
-# Перенаправляем логи borg в наш файл 
-LOG=/var/log/backup_borg.log
-
-# Передача "парольной фразы"
-export BORG_PASSPHRASE='passphrase'
-# Параметры бэкапирования
-borg create \
-  --stats --list --debug --progress \
-  ${BACKUP_USER}@${BACKUP_HOST}:${BACKUP_REPO}::"etc-server-{now:%Y-%m-%d_%H:%M:%S}" \
-  /etc 2>> ${LOG}
-
-# Параметры очищения архивов превышающих временное значение
-# В данном ДЗ определено хранить бэкапы за последние 30 дней и по одному за предыдущие два месяца
-borg prune \
-  -v --list \
-  ${BACKUP_USER}@${BACKUP_HOST}:${BACKUP_REPO} \
-  --keep-daily=30 \
-  --keep-monthly=2 2>> ${LOG}
-
-rm -f ${LOCKFILE}
-
-- Выполняем скрипт вручную, чтобы проверить работу
-- Проверяем журнал
-
-$ cat /var/log/backup_borg.log 
-
-9. Автоматизируем бэкапирование
-
-- На хосте сервер созданы два юнита
-- юнит-таймер и юнит-сервис с типом oneshot, вызывающий наш скрипт
+5. Регулярный запуск скрипта обеспечивается юнитами timer и service. 
 
 Конфигурация таймера
 Расположение  /etc/systemd/system/backup-borg.timer
 
-[Unit]
-Description=Сервис резервирования - таймер
+        [Unit]
+        Description=Сервис резервирования - таймер
 
-[Timer]
-OnBootSec=300
-OnUnitActiveSec=1h
-Unit=backup-borg.service
+        [Timer]
+        OnBootSec=300
+        OnUnitActiveSec=300
+        Unit=backup-borg.service
 
-[Install]
-WantedBy=multi-user.target
+        [Install]
+        WantedBy=multi-user.target
 
 
 Конфигурация сервиса
 Расположение /etc/systemd/system/backup-borg.service
+        
+        [Unit]
+        Description=Служба выполнения резервирования Borg
+        Wants=network-online.target
+        After=network-online.target
+
+        [Service]
+        Type=oneshot
+        ExecStart=/home/vagrant/backup-borg.sh
+
+6. Для обуспечения безопасности используется алгоритм шифрование blake2 как эффективный и менее затратный. Алгоритм указывается при инициализации borg
+
+7. Логи borg перехватываются и направляются в директорию /var/log/backup_borg.log. 
+8. Для ротации логов было добавлено правило в logrotate для borg
+
+# Запуск стенда:
+    
+    $ vagrant up
+
+После отработки, подлючаемся к хосту server
+
+$ vagrant ssh server
+
+Переходим в директорию /home/vagrant (вы уже в ней по умолчанию, но для порядка надо указать)
+Проверяем работу скрипта
+
+$ ./
 
 
-[Unit]
-Description=Служба выполнения резервирования Borg
-Wants=network-online.target
-After=network-online.target
-
-[Service]
-Type=oneshot
-ExecStart=/opt/backup-borg.sh
-
-
-10. Проверим работу.
+Проверим работу.
 Создадим директорию с файлами на хосте server
 
 $ mkdir /etc/fortest
 $ touch /etc/fortest/file{01..10}
 $ ls -l /etc/fortest/
 
-Запускаем службы
-- sudo systemctl daemon-reload
-- sudo systemctl enable --now backup-borg.timer
-- sudo systemctl enable --now backup-borg.service
-
 
 - После отработки скрипта снимем логи:
 
-12. Восстановление из бэкапа
+Восстановление из бэкапа
 
 
-
-
+Материалы:
+1. https://community.hetzner.com/tutorials/install-and-configure-borgbackup/ru?title=BorgBackup/ru
+2. https://borgbackup.readthedocs.io/en/stable/usage/init.html
 
