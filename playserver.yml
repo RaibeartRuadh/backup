@@ -3,11 +3,11 @@
   become: true
 
   tasks:
-    - name: Установка временной зоны MSK
+    - name: timezone - Установка временной зоны MSK
       timezone:
         name: Europe/Moscow
 
-    - name: Устанавливаем epel-репозиторий
+    - name: install epel-release - Устанавливаем epel-репозиторий
       yum:
         name: epel-release
         state: present
@@ -15,7 +15,7 @@
         - epel-package
         - packages
 
-    - name: Устанавливаем необходимые и вспомогательные пакеты через yum
+    - name: install packages via yum - Устанавливаем необходимые и вспомогательные пакеты через yum
       become: true
       yum:
         name: "{{item}}"
@@ -27,7 +27,7 @@
         - yum-utils
 
 
-    - name: Устанавливаем borgbackup 1.1.14
+    - name: install borg backup package - Устанавливаем borgbackup 1.1.14
       get_url:
         url: https://github.com/borgbackup/borg/releases/download/1.1.14/borg-linux64
         dest: /usr/bin/borg
@@ -35,34 +35,34 @@
         group: root
         mode: '0755'
 
-    - name: Добавляем директорию ssh 
+    - name: create ssh folder - Добавляем директорию ssh 
       file:
         path: /root/.ssh
         state: directory
 
-    - name: Генгерируем ssh ключи
+    - name: create ssh keys - Генгерируем ssh ключи
       openssh_keypair:
         path: /root/.ssh/id_rsa
 
-    - name: Сохраняем публичный ключик в шару
+    - name: save keys in shared folders on host mashine - Сохраняем публичный ключик в шару
       fetch: 
         src: /root/.ssh/id_rsa.pub
         dest: ssh/
         flat: yes
 
-    - name: Копируем скрипт
+    - name: copy script - Копируем скрипт
       copy:
         src: backup-borg.sh
         dest: /home/vagrant/
         mode: a+x
 
-    - name: Копируем скрипт
+    - name: copy script -Копируем скрипт
       copy:
         src: borginit.sh
         dest: /home/vagrant/
         mode: a+x
 
-    - name: Создаем файл для лога
+    - name: create file for log -  Создаем файл для лога
       copy:
         content: ""
         dest: /var/log/backup_borg.log
@@ -71,14 +71,14 @@
         owner: vagrant
         mode: 0777
 
-    - name: Копируем unit service
+    - name: copy unit service - Копируем unit service
       copy:
         src: backup-borg.service
         dest: /etc/systemd/system/backup-borg.service
       notify:
         - enable backup-borg.service
 
-    - name: Копируем unit timer
+    - name: copy unit timer - Копируем unit timer
       copy:
         src: backup-borg.timer
         dest: /etc/systemd/system/

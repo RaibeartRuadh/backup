@@ -1,5 +1,5 @@
 [Unit]
-Description=Сервис резервирования - таймер
+Description=backup service timer
 
 [Timer]
 OnBootSec=300

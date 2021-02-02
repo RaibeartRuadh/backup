@@ -7,11 +7,11 @@
     home: /home/borg
 
   tasks:    
-    - name: Установка временной зоны MSK
+    - name: timezone - Установка временной зоны MSK
       timezone:
         name: Europe/Moscow
 
-    - name: Устанавливаем epel-репозиторий
+    - name: install epel-release - Устанавливаем epel-репозиторий
       yum:
         name: epel-release
         state: present
@@ -19,7 +19,7 @@
         - epel-package
         - packages
 
-    - name: Устанавливаем необходимые и вспомогательные пакеты через yum
+    - name: install packages via yum - Устанавливаем необходимые и вспомогательные пакеты через yum
       become: true
       yum:
         name: "{{item}}"
@@ -30,7 +30,7 @@
         - net-tools
         - yum-utils
 
-    - name: Устанавливаем borgbackup 1.1.14
+    - name: install borg backup package - Устанавливаем borgbackup 1.1.14
       get_url:
         url: https://github.com/borgbackup/borg/releases/download/1.1.14/borg-linux64
         dest: /usr/bin/borg
@@ -38,12 +38,12 @@
         group: root
         mode: '0755'
         
-    - name: Группа пользователя borg
+    - name: group create - Группа пользователя borg
       group:
         name: "{{ group }}"
         state: present
 
-    - name: Добавление пользователя borg
+    - name: create borg user - Добавление пользователя borg
       user:
         name: "{{ user }}"
         home: "{{ home }}"
@@ -51,7 +51,7 @@
         group: "{{ group }}"
         state: present
 
-    - name: добавляем директорию ssh
+    - name: create folder for ssh keys - добавляем директорию ssh
       file:
         path: "{{ home }}/.ssh"
         owner: "{{ user }}"
@@ -59,19 +59,19 @@
         mode: 0700
         state: directory
 
-    - name: добавляем ssh-ключ
+    - name: add ssh keys - добавляем ssh-ключ
       authorized_key:
         user: "{{ user }}"
         key: "{{ lookup('file', 'ssh/id_rsa.pub') }}"
 
-    - name: меняем владельца
+    - name: change folder's owner - меняем владельца
       file:
         path: "{{ home }}"
         owner: "{{ user }}"
         group: "{{ user }}"
         recurse: yes
 
-    - name: меняем владельца
+    - name: change folder's owner - меняем владельца
       file:
         path: /var/backup
         owner: "{{ user }}"
@@ -83,21 +83,16 @@
   become: true
 
   tasks:
-    - name: Получаем публичный ключ
+    - name: get public key -  публичный ключ
       command: "ssh-keyscan -H 192.168.10.11"
       register: backupkey
 
-    - name: Добавляем хост backup в известные хосты
+    - name: add backup host in known - Добавляем хост backup в известные хосты
       copy:
         content: "{{ backupkey.stdout }}"
         dest: /root/.ssh/known_hosts
 
-#    - name: Копируем скрипт
-#      copy:
-#        src: server.sh
-#        dest: /home/vagrant/
-#        mode: a+x
-    - name: Инициируем бэкапирование borg
+    - name: create borg init - Инициируем бэкапирование borg
       command: sh /home/vagrant/borginit.sh
    
     - name: Копируем правило logrotate
@@ -106,10 +101,7 @@
         dest: /etc/logrotate.d/borg
 
 
-    #- name: Инициируем бэкапирование borg
-    #  command: BORG_PASSPHRASE="derparol" borg init --encryption=repokey-blake2 borg@192.168.10.11:server-etc/
 
-        
      
         
         
